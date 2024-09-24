@@ -336,9 +336,5 @@ namespace ChessGame
             Console.WriteLine(" - exit: Exits the game");
             Console.WriteLine();
         }
-        static public bool IsCheckMate()
-        {
-
-        }
     }
 }
