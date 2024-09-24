@@ -27,7 +27,17 @@ namespace ChessGame
         }
         static public bool IsUnderCheck(Piece[,] chessBoard, int[] selSquare, int[] newSquare, string player)
         {
-            chessBoard[newSquare[0], newSquare[1]] = chessBoard[selSquare[0], selSquare[1]];
+            //this is used to remember what piece was overwritten
+            Piece pieceEaten = chessBoard[newSquare[0], newSquare[1]];
+
+            //Does the potential move
+            try
+            {
+                chessBoard[newSquare[0], newSquare[1]] = chessBoard[selSquare[0], selSquare[1]];
+            }catch (Exception e)
+            {
+                return false;
+            }
 
             string colorEmptySquare = (selSquare[0] + selSquare[1]) % 2 == 0 ? "white" : "black";
 
@@ -87,7 +97,7 @@ namespace ChessGame
             colorEmptySquare = (newSquare[0] + newSquare[1]) % 2 == 0 ? "white" : "black";
 
             chessBoard[newSquare[0], newSquare[1]] =
-                new EmptyPiece(chessBoard[newSquare[0], newSquare[1]].GetPosition(), colorEmptySquare);
+                pieceEaten;
 
             chessBoard[selSquare[0], selSquare[1]].SetPosition(selSquare);
 

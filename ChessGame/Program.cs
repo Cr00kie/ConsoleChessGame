@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using System.Xml;
 
 namespace ChessGame
@@ -50,10 +51,29 @@ namespace ChessGame
                             isProgramOnGoing = false;
                             break;
                         case "move":
-                            MoveCommand(ref chessBoard, player);
-                            turn++;
-                            player = turn % 2 == 0 ? player = "white" : player = "black";
-                            break;
+                            //If MoveCommand returns true, it is checkmate, else continue
+                            if (MoveCommand(ref chessBoard, player))
+                            {
+                                Console.Clear();
+                                //Show last move
+                                PrintChessBoard(chessBoard);
+                                Console.WriteLine("================================");
+                                Console.WriteLine($"{player}'s turn \t | \t turn: {turn}");
+                                Console.WriteLine("================================");
+                                Console.WriteLine();
+
+                                Console.WriteLine($"Checkmate, {player} won!");
+                                Console.WriteLine("Press any key to restart ...");
+                                Console.ReadKey();
+                                isGameOnGoing = false;
+                                break;
+                            }
+                            else
+                            {
+                                turn++;
+                                player = turn % 2 == 0 ? player = "white" : player = "black";
+                                break;
+                            }
                         case "restart":
                             isGameOnGoing = false;
                             break;
@@ -72,13 +92,15 @@ namespace ChessGame
                 Console.WriteLine("Game ended");
 
             }
+            Console.WriteLine("Exiting app");
         }
-        static public void MoveCommand(ref Piece[,] chessBoard, string player)
+        static public bool MoveCommand(ref Piece[,] chessBoard, string player)
         {
             ///<summary>
             /// 1.- Asks player for the desired move
             /// 2.- If the move is posible it does it
             /// 3.- Checks if there is check mate
+            /// 4.- returns true if game has ended, false if game continues
             ///</summary>
 
             int[] selSquare = new int[] { -1, -1 };
@@ -237,9 +259,15 @@ namespace ChessGame
                                 }
                             } while (!isInputValid);
                         }
+
+                        //Check if the move causes checkmate
+                        if (IsCheckMate(chessBoard, player == "white" ? "black" : "white")) return true;
                     }
                 }
             } while (!isMoveCorrect);
+
+            // If it reaches here then it wasn't checkmate
+            return false;
         }
         static public Piece[,] FillChessBoard()
         {
@@ -335,6 +363,71 @@ namespace ChessGame
             Console.WriteLine(" - restart: Restarts the chessboard");
             Console.WriteLine(" - exit: Exits the game");
             Console.WriteLine();
+        }
+
+        static public bool IsCheckMate(Piece[,] chessBoard, string player)
+        {
+            int[] kingSquare = null;
+
+            //Finds the player king
+            foreach (Piece piece in chessBoard) 
+            {
+                if (piece.color == player && piece.GetType() == typeof(King))
+                {
+                    kingSquare = piece.GetPosition();
+                    break;
+                }
+            }
+
+            if (kingSquare == null)
+            {
+                throw new Exception($"error: couldnt find {player}'s king");
+            }
+
+            //Sees if an enemy piece threatens the king
+            foreach (Piece piece in chessBoard)
+            {
+                //skips ally piece and empty squares
+                if (piece.color == player || piece.GetType() == typeof(EmptyPiece)) 
+                {
+                    continue;
+                }
+
+                int[,] pieceMoves = piece.GetPosibleMoves(chessBoard);
+
+                //sees if a move from said piece can take the king
+                for (int i = 0; i < pieceMoves.GetLength(0); i++) 
+                {
+                    //Checks if the move takes the king
+                    if (pieceMoves[i, 0] == kingSquare[0] && pieceMoves[i, 1] == kingSquare[1])
+                    {
+                        //If a move from that piece can take the king checks if any ally piece can defend
+                        foreach(Piece defendingPiece in chessBoard)
+                        {
+                            if (defendingPiece.color != player || defendingPiece.GetType() == typeof(EmptyPiece)) //skips ally piece and empty squares
+                            {
+                                continue;
+                            }
+
+                            int[,] defendingPieceMoves = defendingPiece.GetPosibleMoves(chessBoard);
+
+                            //Sees if after any of the posible moves the king is not checked
+                            for (int j = 0; j < defendingPieceMoves.GetLength(0); j++)
+                            {
+                                //If a piece has a move which avoids mate then it isn't checkmate
+                                if(!Piece.IsUnderCheck(chessBoard, defendingPiece.GetPosition(), new[] { defendingPieceMoves[j, 0], defendingPieceMoves[j, 1] }, player)) 
+                                    return false;
+                            }
+                        }
+
+                        //if no defending piece was found then it's checkmate
+                        return true;
+                    }
+                }
+
+            }
+            // this means the king wasn't under check because no enemy piece can take the king
+            return false;
         }
     }
 }

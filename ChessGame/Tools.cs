@@ -12,7 +12,7 @@ namespace ChessGame
         {
             //Hecho por Jon Skeet en stackoverflow.com
             // TODO: Validation and special-casing for list.Count == 0
-            if (list.Count == 0) { return new int[,] { { -1, 0 } }; }
+            if (list.Count == 0) { return new int[,] { { 0, 0 } }; }
             int minorLength = list[0].Length;
             int[,] retArray = new int[list.Count, minorLength];
             for (int i = 0; i < list.Count; i++)
